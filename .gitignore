@@ -1,0 +1,29 @@
+# ===== 빌드 산출물 (git에 넣지 않음) =====
+# PyInstaller 결과물 (파일변환기.exe 등) — 용량이 크고 소스가 아님.
+# 배포용 exe는 GitHub 저장소가 아니라 "Releases"로 공유하세요.
+dist/
+build/
+*.spec
+
+# ===== 파이썬 캐시 / 가상환경 =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ===== 런타임 데이터 (사용자가 올린/변환된 파일) =====
+# 앱 실행 시 자동 생성되므로 저장소에 포함할 필요 없음.
+storage/
+
+# ===== 번들용 외부 프로그램 (직접 커밋하지 않음) =====
+# ffmpeg는 용량이 커서 저장소에 넣지 않습니다. 빌드 시 별도로 준비.
+ffmpeg/
+
+# ===== OS / 에디터 잡파일 =====
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>파일 변환기</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- 상단 바 -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="/">
+                <span class="brand-mark">⇄</span>
+                <span class="brand-name">파일 변환기</span>
+            </a>
+            <span class="brand-tag">파일을 간편하게 변환하는 로컬 도구</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- 히어로 -->
+        <section class="hero">
+            <h1>어떤 파일이든, 원하는 포맷으로</h1>
+            <p>변환할 도구를 고르고 파일을 끌어다 놓으세요. 설치·회원가입 없이 이 PC 안에서 처리됩니다.</p>
+        </section>
+
+        <!-- 툴 그리드 -->
+        <section class="tools">
+            <div class="cat-head">
+                <h2>이미지 변환</h2>
+                <span class="cat-sub">지금 사용 가능</span>
+            </div>
+            <div class="grid">
+                <button class="card" data-tool="img-jpg">
+                    <span class="icon img">🖼️</span>
+                    <span class="card-title">JPG로 변환</span>
+                    <span class="card-desc">PNG·WEBP → JPG (투명 영역은 흰색 처리)</span>
+                </button>
+                <button class="card" data-tool="img-png">
+                    <span class="icon img">🖼️</span>
+                    <span class="card-title">PNG로 변환</span>
+                    <span class="card-desc">투명도를 유지한 무손실 이미지로</span>
+                </button>
+                <button class="card" data-tool="img-webp">
+                    <span class="icon img">🖼️</span>
+                    <span class="card-title">WEBP로 변환</span>
+                    <span class="card-desc">용량이 작은 웹용 이미지로</span>
+                </button>
+            </div>
+
+            <div class="cat-head">
+                <h2>PDF 도구</h2>
+                <span class="cat-sub">지금 사용 가능</span>
+            </div>
+            <div class="grid">
+                <button class="card" data-tool="pdf-jpg">
+                    <span class="icon pdf">📄</span>
+                    <span class="card-title">PDF → JPG</span>
+                    <span class="card-desc">페이지마다 이미지로 (여러 장은 ZIP)</span>
+                </button>
+                <button class="card" data-tool="pdf-compress">
+                    <span class="icon pdf">📄</span>
+                    <span class="card-title">PDF 압축</span>
+                    <span class="card-desc">용량을 줄여 가볍게</span>
+                </button>
+                <button class="card" data-tool="pdf-merge">
+                    <span class="icon pdf">📄</span>
+                    <span class="card-title">PDF 병합</span>
+                    <span class="card-desc">여러 PDF를 하나로 (순서 지정)</span>
+                </button>
+                <button class="card" data-tool="pdf-split">
+                    <span class="icon pdf">📄</span>
+                    <span class="card-title">PDF 분할</span>
+                    <span class="card-desc">페이지별 개별 PDF로 (ZIP)</span>
+                </button>
+                <button class="card" data-tool="pdf-text">
+                    <span class="icon pdf">📝</span>
+                    <span class="card-title">PDF 텍스트 추출</span>
+                    <span class="card-desc">문서의 글자를 TXT 파일로</span>
+                </button>
+                <button class="card" data-tool="pdf-images">
+                    <span class="icon pdf">🖼️</span>
+                    <span class="card-title">PDF 이미지 추출</span>
+                    <span class="card-desc">문서에 박힌 이미지를 원본째로 (ZIP)</span>
+                </button>
+            </div>
+
+            <div class="cat-head">
+                <h2>영상 변환</h2>
+                <span class="cat-sub">지금 사용 가능</span>
+            </div>
+            <div class="grid">
+                <button class="card" data-tool="vid-mp4">
+                    <span class="icon vid">🎬</span>
+                    <span class="card-title">MP4로 변환</span>
+                    <span class="card-desc">MOV·AVI·MKV·WEBM → MP4 (H.264)</span>
+                </button>
+                <button class="card" data-tool="vid-gif">
+                    <span class="icon vid">🎬</span>
+                    <span class="card-title">GIF로 변환</span>
+                    <span class="card-desc">영상을 움직이는 GIF로 (화질 최적화)</span>
+                </button>
+                <button class="card" data-tool="vid-webm">
+                    <span class="icon vid">🎬</span>
+                    <span class="card-title">WEBM으로 변환</span>
+                    <span class="card-desc">용량이 작은 웹용 영상으로</span>
+                </button>
+            </div>
+
+            <div class="cat-head">
+                <h2>오디오 변환</h2>
+                <span class="cat-sub">지금 사용 가능</span>
+            </div>
+            <div class="grid">
+                <button class="card" data-tool="aud-mp3">
+                    <span class="icon aud">🎵</span>
+                    <span class="card-title">MP3로 변환</span>
+                    <span class="card-desc">WAV·M4A → MP3 (영상의 소리도 추출)</span>
+                </button>
+                <button class="card" data-tool="aud-wav">
+                    <span class="icon aud">🎵</span>
+                    <span class="card-title">WAV로 변환</span>
+                    <span class="card-desc">무손실 PCM 오디오로</span>
+                </button>
+                <button class="card" data-tool="aud-m4a">
+                    <span class="icon aud">🎵</span>
+                    <span class="card-title">M4A로 변환</span>
+                    <span class="card-desc">용량 작은 AAC 오디오로</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 변환 패널 (카드를 고르면 나타남) -->
+        <section id="converter" class="converter" hidden>
+            <div class="conv-head">
+                <button id="backBtn" class="back">← 도구 목록</button>
+                <div class="conv-title">
+                    <span id="convLabel">이미지 → JPG</span>
+                    <select id="format" aria-label="바꿀 포맷" hidden>
+                        <option value="jpg">JPG</option>
+                        <option value="png">PNG</option>
+                        <option value="webp">WEBP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="dropzone" class="dropzone">
+                <div class="dz-inner">
+                    <div class="dz-icon">⬆</div>
+                    <p class="dz-text" id="dzText">여기로 파일을 끌어다 놓기</p>
+                    <p class="dz-or">또는 클릭해서 선택</p>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" multiple hidden>
+            </div>
+
+            <!-- 병합 모드 전용: 모은 파일 목록 + 병합 버튼 -->
+            <div id="mergeArea" class="merge-area" hidden>
+                <ul id="mergeList" class="merge-list"></ul>
+                <button id="mergeBtn" class="merge-btn" disabled>병합하기</button>
+            </div>
+
+            <ul id="results" class="results"></ul>
+        </section>
+    </main>
+
+    <footer class="foot">
+        <span>이 PC 안에서만 동작하는 로컬 변환기 · 파일은 외부로 전송되지 않습니다.</span>
+    </footer>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
