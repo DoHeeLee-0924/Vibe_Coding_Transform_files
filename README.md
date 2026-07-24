@@ -7,14 +7,17 @@ Python(Flask) + Pillow + PyMuPDF + ffmpeg 로 동작합니다.
 
 ---
 
-## ✨ 기능 (총 15개 도구)
+## ✨ 기능 (총 16개 도구)
 
 | 카테고리 | 도구 |
 |----------|------|
+| **AI** | AI 얼굴 격자(AutoGrid) — 얼굴 자동 감지 후 격자 오버레이 · 수동 보정 · PNG 저장 |
 | **이미지** | JPG · PNG · WEBP 변환 (PNG→JPG 시 투명 영역 흰색 처리) |
-| **PDF** | → JPG · 압축 · 병합 · 분할 · 텍스트 추출 · 이미지 추출 |
 | **영상** | MP4 · GIF · WEBM 변환 |
 | **오디오** | MP3 · WAV · M4A 변환 (영상에서 소리만 추출 가능) |
+| **PDF** | → JPG · 압축 · 병합 · 분할 · 텍스트 추출 · 이미지 추출 |
+
+> AI 얼굴 격자는 브라우저 안에서 처리되며(face-api.js), **얼굴 감지 모델 로딩 시에만 인터넷 연결이 필요**합니다.
 
 - 파일마다 **진행률 바 + 상태 배지**(처리중 / 완료 / 실패)를 표시
 - 결과가 여러 개면 자동으로 **ZIP**으로 묶어 제공
@@ -66,7 +69,8 @@ Vibe_Coding_Transform_files/
 │   └── index.html      # 툴 허브 화면
 ├── static/
 │   ├── style.css       # 라이트 테마 UI
-│   └── main.js         # 드롭존·진행률·병합 UI
+│   ├── main.js         # 드롭존·진행률·병합 UI
+│   └── autogrid.js     # AI 얼굴 격자 (face-api.js, 브라우저 내 처리)
 ├── storage/            # 업로드/결과 (실행 시 자동 생성, git 제외)
 ├── requirements.txt    # 파이썬 의존성
 ├── run.bat             # Windows 실행 런처

@@ -55,6 +55,7 @@ formatSel.addEventListener("change", () => {
 backBtn.addEventListener("click", closeTool);
 
 function openTool(toolId) {
+    if (!TOOLS[toolId]) return; // 별도 패널을 쓰는 도구(예: AutoGrid)는 여기서 처리하지 않음
     currentTool = { ...TOOLS[toolId] };
     convLabel.textContent = currentTool.label;
     results.innerHTML = "";

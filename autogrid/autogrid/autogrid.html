@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoGrid</title>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.fog.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0c0e1a;
+    --surface: #141625;
+    --surface2: #1a1d30;
+    --border: rgba(255,255,255,0.06);
+    --text: #f0f0f5;
+    --text2: #9395a5;
+    --text3: #5a5c6f;
+    --accent: #FF494D;
+    --accent-glow: rgba(255,73,77,0.15);
+    --green: #34d399;
+    --green-glow: rgba(52,211,153,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  /* ── Vanta ── */
+  #vantaBg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface2) transparent;
+  }
+
+  .sidebar-header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-img {
+    width: calc(100% + 80px);
+    max-width: none;
+    height: auto;
+    display: block;
+    margin: -40px -40px -40px -40px;
+    opacity: 0.9;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 8px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-section {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-section:last-child { border-bottom: none; }
+
+  .section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  /* Sliders */
+  .slider-group {
+    margin-bottom: 14px;
+  }
+  .slider-group:last-child { margin-bottom: 0; }
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .slider-label span:first-child {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .slider-val {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--surface2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    transition: transform 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  /* Color picker */
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .color-row span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  input[type="color"] {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--surface2);
+    border-radius: 8px;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+    transition: border-color 0.15s;
+  }
+  input[type="color"]:hover { border-color: var(--text3); }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
+  input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: none; }
+
+  /* Sidebar Buttons */
+  .sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sb-btn {
+    width: 100%;
+    padding: 11px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+  .sb-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .sb-btn:active:not(:disabled) { transform: scale(0.98); }
+  .sb-btn .icon {
+    width: 20px;
+    text-align: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .sb-btn.primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .sb-btn.primary:hover:not(:disabled) { background: #ff6366; box-shadow: 0 4px 20px var(--accent-glow); }
+
+  .sb-btn.secondary {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .sb-btn.secondary:hover:not(:disabled) { background: #242740; }
+
+  .sb-btn.ghost {
+    background: transparent;
+    color: var(--text2);
+  }
+  .sb-btn.ghost:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
+
+  .sb-btn.green {
+    background: rgba(52,211,153,0.1);
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,0.2);
+  }
+  .sb-btn.green:hover:not(:disabled) { background: rgba(52,211,153,0.18); }
+  .sb-btn.green.active {
+    background: var(--green);
+    color: var(--bg);
+    border-color: var(--green);
+  }
+
+  .sb-btn.danger {
+    background: rgba(255,73,77,0.08);
+    color: var(--accent);
+    border: 1px solid rgba(255,73,77,0.15);
+  }
+  .sb-btn.danger:hover:not(:disabled) { background: rgba(255,73,77,0.15); }
+  .sb-btn.danger.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .manual-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .folder-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--green);
+    padding: 8px 12px;
+    background: var(--green-glow);
+    border-radius: var(--radius-sm);
+    margin-top: 8px;
+  }
+  .folder-indicator .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .folder-indicator .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .face-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--surface2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Main Area ── */
+  .main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Status Toast */
+  .toast {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    padding: 10px 24px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .toast.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .toast.loading { background: rgba(20,22,37,0.9); color: var(--text); border: 1px solid var(--border); }
+  .toast.success { background: rgba(52,211,153,0.12); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+  .toast.error { background: rgba(255,73,77,0.12); color: var(--accent); border: 1px solid rgba(255,73,77,0.25); }
+  .toast.info { background: rgba(20,22,37,0.9); color: var(--text2); border: 1px solid var(--border); }
+
+  /* Canvas Area */
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+  }
+
+  .canvas-frame {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .canvas-frame canvas {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 48px);
+    object-fit: contain;
+  }
+  .canvas-frame.mode-add { box-shadow: 0 8px 40px rgba(0,0,0,0.3), 0 0 0 2px var(--green); cursor: crosshair; }
+  .canvas-frame.mode-remove { box-shadow: 0 8px 40px rgba(0,0,0,0.3), 0 0 0 2px var(--accent); cursor: pointer; }
+
+  /* Drop Zone */
+  .dropzone {
+    width: 520px;
+    height: 320px;
+    border: 2px dashed rgba(255,255,255,0.08);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: rgba(255,255,255,0.2);
+    background: var(--surface2);
+  }
+  .dropzone-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--text3);
+  }
+  .dropzone-text {
+    text-align: center;
+    line-height: 1.6;
+  }
+  .dropzone-text .main-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .dropzone-text .sub-text {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+  .dropzone-text kbd {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    font-family: var(--font);
+  }
+
+  #fileInput { display: none; }
+
+  /* Scrollbar */
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div id="vantaBg"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <img src="asset/aimz_BI_logo_media_white.png" alt="AIMZ" class="logo-img">
+    <div class="logo-sub">AutoGrid</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-title">Grid Settings</div>
+    <div class="slider-group">
+      <div class="slider-label"><span>간격</span><span class="slider-val" id="gridSizeVal">15px</span></div>
+      <input type="range" id="gridSize" min="3" max="80" value="15">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>굵기</span><span class="slider-val" id="lineWidthVal">1.0</span></div>
+      <input type="range" id="lineWidth" min="1" max="10" value="1" step="0.5">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>투명도</span><span class="slider-val" id="opacityVal">70%</span></div>
+      <input type="range" id="opacity" min="0.05" max="1" value="0.7" step="0.05">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>여백</span><span class="slider-val" id="paddingVal">10%</span></div>
+      <input type="range" id="padding" min="0" max="50" value="10">
+    </div>
+    <div class="color-row" style="margin-top:16px">
+      <span>선 색상</span>
+      <input type="color" id="lineColor" value="#000000">
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-title">Actions</div>
+    <div class="sidebar-actions">
+      <button class="sb-btn secondary" id="btnUpload"><span class="icon">+</span>이미지 업로드</button>
+      <button class="sb-btn primary" id="btnFace" disabled><span class="icon">AI</span>얼굴 자동 감지</button>
+      <button class="sb-btn secondary" id="btnFull" disabled><span class="icon">#</span>전체 격자</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-title">Manual Edit</div>
+    <div class="manual-row">
+      <button class="sb-btn green" id="btnAddMode" disabled><span class="icon">+</span>추가</button>
+      <button class="sb-btn danger" id="btnRemoveMode" disabled><span class="icon">-</span>제거</button>
+    </div>
+    <button class="sb-btn primary" id="btnApplyGrid" disabled style="margin-top:8px"><span class="icon">G</span>격자 적용</button>
+    <div class="face-badge" id="faceCount" style="margin-top:8px;display:none"></div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-title">Export</div>
+    <div class="sidebar-actions">
+      <button class="sb-btn secondary" id="btnSave" disabled><span class="icon">S</span>저장</button>
+      <button class="sb-btn ghost" id="btnFolder"><span class="icon">F</span>저장 폴더 지정</button>
+      <div class="folder-indicator" id="folderIndicator" style="display:none">
+        <span class="dot"></span>
+        <span class="name" id="folderName"></span>
+      </div>
+      <button class="sb-btn ghost" id="btnReset" disabled><span class="icon">R</span>초기화</button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="toast" id="toast"></div>
+
+  <div class="canvas-area" id="canvasArea">
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">+</div>
+      <div class="dropzone-text">
+        <div class="main-text">이미지를 드래그하거나 클릭하여 업로드</div>
+        <div class="sub-text"><kbd>Ctrl</kbd> + <kbd>V</kbd> 붙여넣기도 가능합니다</div>
+      </div>
+    </div>
+    <div class="canvas-frame" id="canvasFrame" style="display:none">
+      <canvas id="canvas"></canvas>
+    </div>
+  </div>
+</main>
+
+<input type="file" id="fileInput" accept="image/*">
+
+<script>
+// ── Vanta Background ──
+VANTA.FOG({
+  el: "#vantaBg",
+  THREE: THREE,
+  mouseControls: true,
+  touchControls: true,
+  gyroControls: false,
+  highlightColor: 0x2a1525,
+  midtoneColor: 0x0c0e1a,
+  lowlightColor: 0x060810,
+  baseColor: 0x0c0e1a,
+  blurFactor: 0.4,
+  speed: 0.8,
+  zoom: 0.5
+});
+
+// ── Elements ──
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const fileInput = document.getElementById('fileInput');
+const toastEl = document.getElementById('toast');
+const dropzone = document.getElementById('dropzone');
+const canvasFrame = document.getElementById('canvasFrame');
+const canvasArea = document.getElementById('canvasArea');
+
+const gridSizeInput = document.getElementById('gridSize');
+const lineWidthInput = document.getElementById('lineWidth');
+const opacityInput = document.getElementById('opacity');
+const lineColorInput = document.getElementById('lineColor');
+const paddingInput = document.getElementById('padding');
+
+const btnUpload = document.getElementById('btnUpload');
+const btnFace = document.getElementById('btnFace');
+const btnFull = document.getElementById('btnFull');
+const btnSave = document.getElementById('btnSave');
+const btnReset = document.getElementById('btnReset');
+const btnAddMode = document.getElementById('btnAddMode');
+const btnRemoveMode = document.getElementById('btnRemoveMode');
+const btnApplyGrid = document.getElementById('btnApplyGrid');
+const faceCountEl = document.getElementById('faceCount');
+const btnFolder = document.getElementById('btnFolder');
+const folderNameEl = document.getElementById('folderName');
+const folderIndicator = document.getElementById('folderIndicator');
+
+let originalImage = null;
+let modelsLoaded = false;
+let faceBoxes = [];
+let manualMode = null;
+let isDragging = false;
+let dragStart = null;
+let dragCurrent = null;
+let saveDirHandle = null;
+let toastTimer = null;
+
+// ── Range Displays ──
+function updateRangeDisplays() {
+  document.getElementById('gridSizeVal').textContent = gridSizeInput.value + 'px';
+  document.getElementById('lineWidthVal').textContent = parseFloat(lineWidthInput.value).toFixed(1);
+  document.getElementById('opacityVal').textContent = Math.round(opacityInput.value * 100) + '%';
+  document.getElementById('paddingVal').textContent = paddingInput.value + '%';
+}
+[gridSizeInput, lineWidthInput, opacityInput, paddingInput].forEach(i => i.addEventListener('input', updateRangeDisplays));
+
+// ── Toast ──
+function showToast(msg, type, duration = 3000) {
+  clearTimeout(toastTimer);
+  toastEl.textContent = msg;
+  toastEl.className = 'toast visible ' + type;
+  if (type !== 'loading') {
+    toastTimer = setTimeout(() => { toastEl.classList.remove('visible'); }, duration);
+  }
+}
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastEl.classList.remove('visible');
+}
+
+function updateFaceCount() {
+  if (faceBoxes.length > 0) {
+    faceCountEl.textContent = `${faceBoxes.length}개 영역 선택됨`;
+    faceCountEl.style.display = '';
+  } else {
+    faceCountEl.style.display = 'none';
+  }
+  btnApplyGrid.disabled = faceBoxes.length === 0;
+}
+
+// ── Folder ──
+btnFolder.addEventListener('click', async () => {
+  try {
+    saveDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    folderNameEl.textContent = saveDirHandle.name;
+    folderIndicator.style.display = '';
+    showToast(`저장 폴더: ${saveDirHandle.name}`, 'success');
+  } catch (e) {
+    if (e.name !== 'AbortError') showToast('폴더 지정 실패', 'error');
+  }
+});
+
+// ── Save ──
+function generateFileName() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `autogrid_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`;
+}
+
+btnSave.addEventListener('click', async () => {
+  const hadMode = manualMode;
+  if (hadMode) { drawOriginal(); faceBoxes.forEach(b => drawFaceGrid(b)); }
+  const fileName = generateFileName();
+  if (saveDirHandle) {
+    try {
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      const fh = await saveDirHandle.getFileHandle(fileName, { create: true });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+      showToast(`${saveDirHandle.name}/${fileName}`, 'success');
+    } catch {
+      const a = document.createElement('a');
+      a.download = fileName; a.href = canvas.toDataURL('image/png'); a.click();
+    }
+  } else {
+    const a = document.createElement('a');
+    a.download = fileName; a.href = canvas.toDataURL('image/png'); a.click();
+    showToast(fileName, 'success');
+  }
+  if (hadMode) drawScene();
+});
+
+// ── Models ──
+async function loadModels() {
+  if (modelsLoaded) return;
+  showToast('얼굴 감지 모델 로딩 중...', 'loading');
+  await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
+  modelsLoaded = true;
+  hideToast();
+}
+
+// ── Image Load ──
+function showCanvas() {
+  dropzone.style.display = 'none';
+  canvasFrame.style.display = '';
+  [btnFace, btnFull, btnReset, btnSave, btnAddMode, btnRemoveMode].forEach(b => b.disabled = false);
+}
+
+function loadImageFromSrc(src) {
+  const img = new Image();
+  img.onload = () => {
+    originalImage = img;
+    faceBoxes = [];
+    setManualMode(null);
+    drawScene();
+    showCanvas();
+    updateFaceCount();
+    hideToast();
+  };
+  img.src = src;
+}
+
+function loadImage(file) {
+  const r = new FileReader();
+  r.onload = (e) => loadImageFromSrc(e.target.result);
+  r.readAsDataURL(file);
+}
+
+// ── Clipboard ──
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const f = item.getAsFile();
+      if (f) { loadImage(f); showToast('클립보드에서 불러옴', 'success'); }
+      return;
+    }
+  }
+});
+
+// ── Drawing ──
+function drawOriginal() {
+  if (!originalImage) return;
+  canvas.width = originalImage.naturalWidth;
+  canvas.height = originalImage.naturalHeight;
+  ctx.drawImage(originalImage, 0, 0);
+}
+
+function drawScene() { drawOriginal(); drawFaceBoxPreviews(); }
+
+function drawFaceBoxPreviews() {
+  faceBoxes.forEach((box, i) => {
+    const pp = parseInt(paddingInput.value) / 100;
+    const pw = box.width * pp, ph = box.height * pp;
+    const x = box.x - pw, y = box.y - ph;
+    const w = box.width + pw * 2, h = box.height + ph * 2;
+    const cx = x + w / 2, cy = y + h / 2;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(52,211,153,0.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 5]);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const fs = Math.max(14, Math.min(22, box.width * 0.12));
+    ctx.fillStyle = 'rgba(52,211,153,0.85)';
+    ctx.font = `700 ${fs}px "Plus Jakarta Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`${i + 1}`, cx, y - 6);
+    ctx.restore();
+  });
+}
+
+function drawDragPreview() {
+  if (!isDragging || !dragStart || !dragCurrent) return;
+  const x = Math.min(dragStart.x, dragCurrent.x), y = Math.min(dragStart.y, dragCurrent.y);
+  const w = Math.abs(dragCurrent.x - dragStart.x), h = Math.abs(dragCurrent.y - dragStart.y);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(52,211,153,0.7)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(52,211,153,0.05)';
+  ctx.fillRect(x, y, w, h);
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawGrid(x, y, w, h) {
+  const gs = parseInt(gridSizeInput.value), lw = parseFloat(lineWidthInput.value);
+  const op = parseFloat(opacityInput.value), c = lineColorInput.value;
+  const r = parseInt(c.slice(1,3),16), g = parseInt(c.slice(3,5),16), b = parseInt(c.slice(5,7),16);
+  ctx.save();
+  ctx.strokeStyle = `rgba(${r},${g},${b},${op})`;
+  ctx.lineWidth = lw;
+  for (let lx = x; lx <= x+w; lx += gs) { ctx.beginPath(); ctx.moveTo(lx,y); ctx.lineTo(lx,y+h); ctx.stroke(); }
+  for (let ly = y; ly <= y+h; ly += gs) { ctx.beginPath(); ctx.moveTo(x,ly); ctx.lineTo(x+w,ly); ctx.stroke(); }
+  ctx.restore();
+}
+
+function drawFaceGrid(box) {
+  const pp = parseInt(paddingInput.value)/100;
+  const pw = box.width*pp, ph = box.height*pp;
+  const x = box.x-pw, y = box.y-ph, w = box.width+pw*2, h = box.height+ph*2;
+  const cx = x+w/2, cy = y+h/2;
+  const gs = parseInt(gridSizeInput.value), lw = parseFloat(lineWidthInput.value);
+  const op = parseFloat(opacityInput.value), c = lineColorInput.value;
+  const r = parseInt(c.slice(1,3),16), g = parseInt(c.slice(3,5),16), b = parseInt(c.slice(5,7),16);
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(cx,cy,w/2,h/2,0,0,Math.PI*2); ctx.clip();
+  ctx.strokeStyle = `rgba(${r},${g},${b},${op})`;
+  ctx.lineWidth = lw;
+  for (let lx = x; lx <= x+w; lx += gs) { ctx.beginPath(); ctx.moveTo(lx,y); ctx.lineTo(lx,y+h); ctx.stroke(); }
+  for (let ly = y; ly <= y+h; ly += gs) { ctx.beginPath(); ctx.moveTo(x,ly); ctx.lineTo(x+w,ly); ctx.stroke(); }
+  ctx.restore();
+}
+
+// ── Interaction ──
+function getCanvasCoords(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX-r.left)*(canvas.width/r.width), y: (e.clientY-r.top)*(canvas.height/r.height) };
+}
+
+function setManualMode(mode) {
+  manualMode = mode;
+  btnAddMode.classList.toggle('active', mode === 'add');
+  btnRemoveMode.classList.toggle('active', mode === 'remove');
+  canvasFrame.classList.remove('mode-add', 'mode-remove');
+  if (mode === 'add') { canvasFrame.classList.add('mode-add'); showToast('드래그하여 얼굴 영역 추가', 'info'); }
+  else if (mode === 'remove') { canvasFrame.classList.add('mode-remove'); showToast('영역 클릭하여 제거', 'info'); }
+  else hideToast();
+}
+
+btnAddMode.addEventListener('click', () => { if (originalImage) setManualMode(manualMode === 'add' ? null : 'add'); });
+btnRemoveMode.addEventListener('click', () => { if (originalImage) setManualMode(manualMode === 'remove' ? null : 'remove'); });
+
+canvas.addEventListener('mousedown', (e) => {
+  if (!originalImage) return;
+  if (manualMode === 'add') {
+    isDragging = true; dragStart = getCanvasCoords(e); dragCurrent = {...dragStart}; e.preventDefault();
+  } else if (manualMode === 'remove') {
+    const pos = getCanvasCoords(e);
+    let idx = -1;
+    for (let i = faceBoxes.length-1; i >= 0; i--) {
+      const b = faceBoxes[i], pp = parseInt(paddingInput.value)/100;
+      const pw = b.width*pp, ph = b.height*pp;
+      const bx = b.x-pw, by = b.y-ph, bw = b.width+pw*2, bh = b.height+ph*2;
+      const cx = bx+bw/2, cy = by+bh/2;
+      const dx = (pos.x-cx)/(bw/2), dy = (pos.y-cy)/(bh/2);
+      if (dx*dx+dy*dy <= 1) { idx = i; break; }
+    }
+    if (idx >= 0) {
+      faceBoxes.splice(idx,1); drawScene(); updateFaceCount();
+      showToast(`영역 제거됨 (${faceBoxes.length}개 남음)`, 'info');
+    } else { showToast('해당 위치에 영역 없음', 'error'); }
+    e.preventDefault();
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDragging || manualMode !== 'add') return;
+  dragCurrent = getCanvasCoords(e); drawScene(); drawDragPreview(); e.preventDefault();
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (!isDragging || manualMode !== 'add') return;
+  isDragging = false;
+  const end = getCanvasCoords(e);
+  const x = Math.min(dragStart.x,end.x), y = Math.min(dragStart.y,end.y);
+  const w = Math.abs(end.x-dragStart.x), h = Math.abs(end.y-dragStart.y);
+  if (w > 10 && h > 10) {
+    faceBoxes.push({x,y,width:w,height:h}); updateFaceCount();
+    showToast(`영역 추가 (총 ${faceBoxes.length}개)`, 'success');
+  }
+  drawScene(); dragStart = null; dragCurrent = null; e.preventDefault();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (isDragging) { isDragging = false; dragStart = null; dragCurrent = null; drawScene(); }
+});
+
+// ── Buttons ──
+btnApplyGrid.addEventListener('click', () => {
+  if (!originalImage || !faceBoxes.length) return;
+  drawOriginal(); faceBoxes.forEach(b => drawFaceGrid(b)); setManualMode(null);
+  showToast(`${faceBoxes.length}개 영역에 격자 적용`, 'success');
+});
+
+btnFace.addEventListener('click', async () => {
+  if (!originalImage) return;
+  btnFace.disabled = true; btnFull.disabled = true;
+  try {
+    await loadModels();
+    showToast('얼굴 감지 중...', 'loading');
+    drawOriginal();
+    const det = await faceapi.detectAllFaces(canvas);
+    if (!det.length) {
+      faceBoxes = []; updateFaceCount();
+      showToast('얼굴 미감지 — 수동 추가하세요', 'error');
+    } else {
+      faceBoxes = det.map(d => ({x:d.box.x, y:d.box.y, width:d.box.width, height:d.box.height}));
+      updateFaceCount(); drawOriginal(); faceBoxes.forEach(b => drawFaceGrid(b));
+      showToast(`${det.length}개 감지 완료`, 'success');
+    }
+  } catch (err) { showToast(err.message, 'error'); }
+  btnFace.disabled = false; btnFull.disabled = false;
+});
+
+btnFull.addEventListener('click', () => {
+  if (!originalImage) return;
+  setManualMode(null); drawOriginal(); drawGrid(0,0,canvas.width,canvas.height);
+  showToast('전체 격자 적용', 'success');
+});
+
+btnReset.addEventListener('click', () => {
+  faceBoxes = []; setManualMode(null); drawOriginal(); updateFaceCount(); hideToast();
+});
+
+btnUpload.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => { if (e.target.files[0]) loadImage(e.target.files[0]); });
+
+// ── Dropzone ──
+dropzone.addEventListener('click', () => fileInput.click());
+canvasArea.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+canvasArea.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+canvasArea.addEventListener('drop', (e) => {
+  e.preventDefault(); dropzone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f?.type.startsWith('image/')) loadImage(f);
+});
+</script>
+</body>
+</html>
